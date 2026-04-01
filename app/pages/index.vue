@@ -2,12 +2,10 @@
 const copied = ref(false)
 
 function copyCommand() {
-  navigator.clipboard.writeText('npx epic-buddy')
+  navigator.clipboard.writeText('npx ccbuddy')
   copied.value = true
   setTimeout(() => (copied.value = false), 2000)
 }
-
-const EYES = ['·', '✦', '×', '◉', '@', '°']
 
 interface Companion {
   name: string
@@ -15,74 +13,171 @@ interface Companion {
   rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
   eye: string
   hat: string
-  sprite: string[]
-  hatLine: string
   description: string
 }
 
 const hatLines: Record<string, string> = {
   none: '',
-  crown: '  \\^^^/  ',
-  tophat: '  [___]  ',
-  propeller: '   -+-   ',
-  halo: '  (   )  ',
-  wizard: '   /^\\   ',
-  beanie: '  (___)  ',
-  tinyduck: '   ,>    ',
+  crown: '   \\^^^/    ',
+  tophat: '   [___]    ',
+  propeller: '    -+-     ',
+  halo: '   (   )    ',
+  wizard: '    /^\\     ',
+  beanie: '   (___)    ',
+  tinyduck: '    ,>      ',
 }
 
-const sprites: Record<string, string[]> = {
-  duck: ['   __   ', ' <({E})__ ', '  ( ._> ', "   `--' "],
-  goose: ['  ({E}>   ', '  ||    ', ' _(__)_ ', '  ^^^^  '],
-  blob: ['  .---.  ', ' ({E}  {E}) ', ' (     ) ', "  `---'  "],
-  cat: ['  /\\_/\\  ', ' ({E}   {E}) ', ' (  w  ) ', ' (")_(") '],
-  dragon: [' /^\\  /^\\ ', '<  {E}  {E}  >', '(   ~~   )', " `-vvvv-' "],
-  octopus: ['  .----.  ', ' ( {E}  {E} ) ', ' (______) ', ' /\\/\\/\\/\\ '],
-  owl: ['  /\\  /\\  ', ' (({E})({E})) ', ' (  ><  ) ', "  `----'  "],
-  penguin: ['  .---.  ', '  ({E}>{E})  ', ' /(   )\\ ', "  `---'  "],
-  turtle: ['  _,--._  ', ' ( {E}  {E} ) ', '/[______]\\', ' ``    `` '],
-  snail: ['{E}   .--. ', ' \\  ( @ ) ', "  \\_`--'  ", ' ~~~~~~~  '],
-  ghost: ['  .----.  ', ' / {E}  {E} \\ ', ' |      | ', ' ~`~``~`~ '],
-  axolotl: ['}~(_____)~{', '}~({E} ..{E})~{', ' ( .--. ) ', ' (_/  \\_) '],
-  capybara: [' n______n ', '( {E}    {E} )', '(   oo   )', " `------' "],
-  cactus: [' n  __  n ', ' | |{E} {E}| | ', ' |_|  |_| ', '   |  |   '],
-  robot: ['  .[||].  ', ' [ {E}  {E} ] ', ' [ ==== ] ', " `------' "],
-  rabbit: ['  (\\__/)  ', ' ( {E}  {E} ) ', '=(  ..  )=', ' (")__(") '],
-  mushroom: ['.-o-OO-o-.', '(_________)', '  |{E}  {E}|  ', '  |____|  '],
-  chonk: [' /\\    /\\ ', '( {E}    {E} )', '(   ..   )', " `------' "],
+const BODIES: Record<string, string[][]> = {
+  duck: [
+    ['            ', '    __      ', '  <({E} )___  ', '   (  ._>   ', '    `--´    '],
+    ['            ', '    __      ', '  <({E} )___  ', '   (  ._>   ', '    `--´~   '],
+    ['            ', '    __      ', '  <({E} )___  ', '   (  .__>  ', '    `--´    '],
+  ],
+  goose: [
+    ['            ', '     ({E}>    ', '     ||     ', '   _(__)_   ', '    ^^^^    '],
+    ['            ', '    ({E}>     ', '     ||     ', '   _(__)_   ', '    ^^^^    '],
+    ['            ', '     ({E}>>   ', '     ||     ', '   _(__)_   ', '    ^^^^    '],
+  ],
+  blob: [
+    ['            ', '   .----.   ', '  ( {E}  {E} )  ', '  (      )  ', '   `----´   '],
+    ['            ', '  .------.  ', ' (  {E}  {E}  ) ', ' (        ) ', '  `------´  '],
+    ['            ', '    .--.    ', '   ({E}  {E})   ', '   (    )   ', '    `--´    '],
+  ],
+  cat: [
+    ['            ', '   /\\_/\\    ', '  ( {E}   {E})  ', '  (  ω  )   ', '  (")_(")   '],
+    ['            ', '   /\\_/\\    ', '  ( {E}   {E})  ', '  (  ω  )   ', '  (")_(")~  '],
+    ['            ', '   /\\-/\\    ', '  ( {E}   {E})  ', '  (  ω  )   ', '  (")_(")   '],
+  ],
+  dragon: [
+    ['            ', '  /^\\  /^\\  ', ' <  {E}  {E}  > ', ' (   ~~   ) ', '  `-vvvv-´  '],
+    ['            ', '  /^\\  /^\\  ', ' <  {E}  {E}  > ', ' (        ) ', '  `-vvvv-´  '],
+    ['   ~    ~   ', '  /^\\  /^\\  ', ' <  {E}  {E}  > ', ' (   ~~   ) ', '  `-vvvv-´  '],
+  ],
+  octopus: [
+    ['            ', '   .----.   ', '  ( {E}  {E} )  ', '  (______)  ', '  /\\/\\/\\/\\  '],
+    ['            ', '   .----.   ', '  ( {E}  {E} )  ', '  (______)  ', '  \\/\\/\\/\\/  '],
+    ['     o      ', '   .----.   ', '  ( {E}  {E} )  ', '  (______)  ', '  /\\/\\/\\/\\  '],
+  ],
+  owl: [
+    ['            ', '   /\\  /\\   ', '  (({E})({E}))  ', '  (  ><  )  ', '   `----´   '],
+    ['            ', '   /\\  /\\   ', '  (({E})({E}))  ', '  (  ><  )  ', '   .----.   '],
+    ['            ', '   /\\  /\\   ', '  (({E})(-))  ', '  (  ><  )  ', '   `----´   '],
+  ],
+  penguin: [
+    ['            ', '  .---.     ', '  ({E}>{E})     ', ' /(   )\\    ', '  `---´     '],
+    ['            ', '  .---.     ', '  ({E}>{E})     ', ' |(   )|    ', '  `---´     '],
+    ['  .---.     ', '  ({E}>{E})     ', ' /(   )\\    ', '  `---´     ', '   ~ ~      '],
+  ],
+  turtle: [
+    ['            ', '   _,--._   ', '  ( {E}  {E} )  ', ' /[______]\\ ', '  ``    ``  '],
+    ['            ', '   _,--._   ', '  ( {E}  {E} )  ', ' /[______]\\ ', '   ``  ``   '],
+    ['            ', '   _,--._   ', '  ( {E}  {E} )  ', ' /[======]\\ ', '  ``    ``  '],
+  ],
+  snail: [
+    ['            ', ' {E}    .--.  ', '  \\  ( @ )  ', '   \\_`--´   ', '  ~~~~~~~   '],
+    ['            ', '  {E}   .--.  ', '  |  ( @ )  ', '   \\_`--´   ', '  ~~~~~~~   '],
+    ['            ', ' {E}    .--.  ', '  \\  ( @  ) ', '   \\_`--´   ', '   ~~~~~~   '],
+  ],
+  ghost: [
+    ['            ', '   .----.   ', '  / {E}  {E} \\  ', '  |      |  ', '  ~`~``~`~  '],
+    ['            ', '   .----.   ', '  / {E}  {E} \\  ', '  |      |  ', '  `~`~~`~`  '],
+    ['    ~  ~    ', '   .----.   ', '  / {E}  {E} \\  ', '  |      |  ', '  ~~`~~`~~  '],
+  ],
+  axolotl: [
+    ['            ', '}~(______)~{', '}~({E} .. {E})~{', '  ( .--. )  ', '  (_/  \\_)  '],
+    ['            ', '~}(______){~', '~}({E} .. {E}){~', '  ( .--. )  ', '  (_/  \\_)  '],
+    ['            ', '}~(______)~{', '}~({E} .. {E})~{', '  (  --  )  ', '  ~_/  \\_~  '],
+  ],
+  capybara: [
+    ['            ', '  n______n  ', ' ( {E}    {E} ) ', ' (   oo   ) ', '  `------´  '],
+    ['            ', '  n______n  ', ' ( {E}    {E} ) ', ' (   Oo   ) ', '  `------´  '],
+    ['    ~  ~    ', '  u______n  ', ' ( {E}    {E} ) ', ' (   oo   ) ', '  `------´  '],
+  ],
+  cactus: [
+    ['            ', ' n  ____  n ', ' | |{E}  {E}| | ', ' |_|    |_| ', '   |    |   '],
+    ['            ', '    ____    ', ' n |{E}  {E}| n ', ' |_|    |_| ', '   |    |   '],
+    [' n        n ', ' |  ____  | ', ' | |{E}  {E}| | ', ' |_|    |_| ', '   |    |   '],
+  ],
+  robot: [
+    ['            ', '   .[||].   ', '  [ {E}  {E} ]  ', '  [ ==== ]  ', '  `------´  '],
+    ['            ', '   .[||].   ', '  [ {E}  {E} ]  ', '  [ -==- ]  ', '  `------´  '],
+    ['     *      ', '   .[||].   ', '  [ {E}  {E} ]  ', '  [ ==== ]  ', '  `------´  '],
+  ],
+  rabbit: [
+    ['            ', '   (\\__/)   ', '  ( {E}  {E} )  ', ' =(  ..  )= ', '  (")__(")  '],
+    ['            ', '   (|__/)   ', '  ( {E}  {E} )  ', ' =(  ..  )= ', '  (")__(")  '],
+    ['            ', '   (\\__/)   ', '  ( {E}  {E} )  ', ' =( .  . )= ', '  (")__(")  '],
+  ],
+  mushroom: [
+    ['            ', ' .-o-OO-o-. ', '(__________)', '   |{E}  {E}|   ', '   |____|   '],
+    ['            ', ' .-O-oo-O-. ', '(__________)', '   |{E}  {E}|   ', '   |____|   '],
+    ['   . o  .   ', ' .-o-OO-o-. ', '(__________)', '   |{E}  {E}|   ', '   |____|   '],
+  ],
+  chonk: [
+    ['            ', '  /\\    /\\  ', ' ( {E}    {E} ) ', ' (   ..   ) ', '  `------´  '],
+    ['            ', '  /\\    /|  ', ' ( {E}    {E} ) ', ' (   ..   ) ', '  `------´  '],
+    ['            ', '  /\\    /\\  ', ' ( {E}    {E} ) ', ' (   ..   ) ', '  `------´~ '],
+  ],
 }
 
-function renderSprite(species: string, eye: string): string[] {
-  const frames = sprites[species] || sprites.blob
-  return frames.map((l) => l.replaceAll('{E}', eye))
+const IDLE_SEQUENCE = [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0]
+
+function renderFrame(species: string, eye: string, hat: string, frameIdx: number): string[] {
+  const frames = BODIES[species] || BODIES.blob
+  const body = frames[frameIdx % frames.length].map((l) => l.replaceAll('{E}', eye))
+  const lines = [...body]
+  if (hat !== 'none' && !lines[0].trim()) {
+    lines[0] = hatLines[hat] || lines[0]
+  }
+  return lines
 }
 
 const companions: Companion[] = [
+  // legendary
   { name: 'Emberclaw', species: 'dragon', rarity: 'legendary', eye: '✦', hat: 'crown', description: 'Breathes fire into your debug sessions' },
   { name: 'Screwflap', species: 'penguin', rarity: 'legendary', eye: '◉', hat: 'wizard', description: 'Waddles through your code with arcane wisdom' },
+  { name: 'Quackshot', species: 'duck', rarity: 'legendary', eye: '✦', hat: 'tinyduck', description: 'The original rubber duck debugger' },
+  { name: 'Inkstorm', species: 'octopus', rarity: 'legendary', eye: '✦', hat: 'wizard', description: 'Eight arms, eight open PRs' },
+  // epic
   { name: 'Glitchpurr', species: 'cat', rarity: 'epic', eye: '×', hat: 'halo', description: 'Knocks bugs off the table' },
   { name: 'Phantombyte', species: 'ghost', rarity: 'epic', eye: '°', hat: 'none', description: 'Haunts your forgotten TODO comments' },
+  { name: 'Shroomweaver', species: 'mushroom', rarity: 'epic', eye: '◉', hat: 'none', description: 'Grows solutions from the mycorrhizal network' },
+  { name: 'Moonhoot', species: 'owl', rarity: 'epic', eye: '°', hat: 'crown', description: 'Watches your code at 3am' },
+  // rare
   { name: 'Voltsprocket', species: 'robot', rarity: 'rare', eye: '@', hat: 'propeller', description: 'Runs your tests at machine speed' },
   { name: 'Gloopsworth', species: 'blob', rarity: 'rare', eye: '·', hat: 'tophat', description: 'Absorbs complexity so you do not have to' },
-  { name: 'Quackshot', species: 'duck', rarity: 'legendary', eye: '✦', hat: 'tinyduck', description: 'The original rubber duck debugger' },
-  { name: 'Shroomweaver', species: 'mushroom', rarity: 'epic', eye: '◉', hat: 'none', description: 'Grows solutions from the mycorrhizal network' },
   { name: 'Shellbrain', species: 'turtle', rarity: 'rare', eye: '·', hat: 'beanie', description: 'Slow and steady ships the feature' },
-  { name: 'Inkstorm', species: 'octopus', rarity: 'legendary', eye: '✦', hat: 'wizard', description: 'Eight arms, eight open PRs' },
-  { name: 'Moonhoot', species: 'owl', rarity: 'epic', eye: '°', hat: 'crown', description: 'Watches your code at 3am' },
   { name: 'Gillbert', species: 'axolotl', rarity: 'rare', eye: '×', hat: 'halo', description: 'Regenerates deleted code from memory' },
+  { name: 'Megachonk', species: 'chonk', rarity: 'rare', eye: '✦', hat: 'crown', description: 'Absolute unit of a pair programmer' },
+  // uncommon
   { name: 'Chompsworth', species: 'capybara', rarity: 'uncommon', eye: '·', hat: 'tophat', description: 'Unbothered by merge conflicts' },
   { name: 'Needlestack', species: 'cactus', rarity: 'uncommon', eye: '@', hat: 'none', description: 'Prickly about code quality' },
   { name: 'Bunnybuffer', species: 'rabbit', rarity: 'uncommon', eye: '°', hat: 'beanie', description: 'Hops between branches effortlessly' },
+  // common
   { name: 'Honkzilla', species: 'goose', rarity: 'common', eye: '·', hat: 'none', description: 'Honks at every lint warning' },
   { name: 'Trailslime', species: 'snail', rarity: 'common', eye: '·', hat: 'none', description: 'Leaves a trail of well-documented code' },
-  { name: 'Megachonk', species: 'chonk', rarity: 'rare', eye: '✦', hat: 'crown', description: 'Absolute unit of a pair programmer' },
-].map((c) => ({
-  ...c,
-  sprite: renderSprite(c.species, c.eye),
-  hatLine: hatLines[c.hat] || '',
-}))
+]
 
-const rarityColors: Record<string, string> = {
+const tick = ref(0)
+let interval: ReturnType<typeof setInterval>
+
+onMounted(() => {
+  interval = setInterval(() => {
+    tick.value++
+  }, 500)
+})
+
+onUnmounted(() => {
+  clearInterval(interval)
+})
+
+function currentSprite(c: Companion, index: number): string[] {
+  const seqIdx = (tick.value + index * 3) % IDLE_SEQUENCE.length
+  const frame = IDLE_SEQUENCE[seqIdx]
+  return renderFrame(c.species, c.eye, c.hat, frame)
+}
+
+const rarityColor: Record<string, string> = {
   common: 'text-common',
   uncommon: 'text-uncommon',
   rare: 'text-rare',
@@ -90,20 +185,12 @@ const rarityColors: Record<string, string> = {
   legendary: 'text-legendary',
 }
 
-const rarityBorders: Record<string, string> = {
-  common: 'border-common/30',
-  uncommon: 'border-uncommon/30',
-  rare: 'border-rare/30',
-  epic: 'border-epic/30',
-  legendary: 'border-legendary/30',
-}
-
-const rarityGlows: Record<string, string> = {
-  legendary: 'shadow-[0_0_20px_rgba(234,179,8,0.08)]',
-  epic: 'shadow-[0_0_16px_rgba(168,85,247,0.06)]',
-  rare: '',
-  uncommon: '',
-  common: '',
+const rarityBorder: Record<string, string> = {
+  common: 'border-common/20',
+  uncommon: 'border-uncommon/20',
+  rare: 'border-rare/20',
+  epic: 'border-epic/20',
+  legendary: 'border-legendary/25',
 }
 
 const rarityStars: Record<string, string> = {
@@ -113,101 +200,151 @@ const rarityStars: Record<string, string> = {
   epic: '★★★★',
   legendary: '★★★★★',
 }
+
+// Rainbow colors from Claude Code theme (shimmer variant)
+const RAINBOW = [
+  'rgb(250,155,147)', // red
+  'rgb(255,185,137)', // orange
+  'rgb(255,225,155)', // yellow
+  'rgb(185,230,180)', // green
+  'rgb(180,205,240)', // blue
+  'rgb(195,180,230)', // indigo
+  'rgb(230,180,210)', // violet
+]
+
+// Rainbow animation offset
+const rainbowOffset = ref(0)
+
+onMounted(() => {
+  setInterval(() => {
+    rainbowOffset.value++
+  }, 120)
+})
+
+const bannerText = 'CCBUDDY'
+const boxWidth = 38 // inner width of the box
+const padAfterBanner = boxWidth - 2 - bannerText.length // "  " prefix already in template
+
+const rainbowHtml = computed(() => {
+  return bannerText
+    .split('')
+    .map((ch, i) => {
+      const color = RAINBOW[(i + rainbowOffset.value) % RAINBOW.length]
+      return `<span style="color:${color}">${ch}</span>`
+    })
+    .join('')
+})
 </script>
 
 <template>
   <div class="min-h-screen">
-    <!-- Hero -->
-    <section class="px-6 pt-20 pb-16 max-w-3xl mx-auto text-center">
-      <p class="text-legendary text-sm tracking-wide mb-4">★★★★★</p>
-      <h1 class="text-3xl sm:text-4xl font-bold text-white leading-tight mb-3">
-        Pick your Claude Code companion
-      </h1>
-      <p class="text-gray-400 text-base mb-8 max-w-lg mx-auto">
-        Force a legendary buddy with one command. No luck required.
-      </p>
+    <!-- Terminal hero -->
+    <section class="px-4 sm:px-6 pt-12 sm:pt-16 pb-10 max-w-3xl mx-auto">
+      <div class="bg-term-surface border border-term-border rounded-md overflow-hidden">
+        <!-- Title bar -->
+        <div class="flex items-center gap-2 px-3 py-2 border-b border-term-border">
+          <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+          <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+          <span class="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+          <span class="text-term-dim text-[11px] ml-2">ccbuddy</span>
+        </div>
+        <!-- Terminal body -->
+        <div class="p-4 sm:p-5">
+          <pre class="text-sm leading-relaxed whitespace-pre"><span class="text-term-muted">$ npx ccbuddy</span>
 
-      <button
-        class="group inline-flex items-center gap-3 bg-surface border border-border rounded-lg px-5 py-3 text-sm hover:border-legendary/40 transition-colors cursor-pointer"
-        @click="copyCommand"
-      >
-        <span class="text-legendary">$</span>
-        <code class="text-gray-200">npx epic-buddy</code>
-        <span
-          class="text-gray-500 group-hover:text-gray-300 transition-colors text-xs"
+  ╭──────────────────────────────────────╮
+  │  <span v-html="rainbowHtml" />{{ ' '.repeat(padAfterBanner) }}│
+  │  <span class="text-term-text">Pick your</span> <span class="text-term-bright">/buddy</span> <span class="text-term-text">companion</span>            │
+  ╰──────────────────────────────────────╯<span class="cursor-blink text-term-bright">█</span></pre>
+        </div>
+      </div>
+
+      <!-- Copy command -->
+      <div class="mt-6 flex justify-center">
+        <button
+          class="group inline-flex items-center gap-3 bg-term-surface border border-term-border rounded-md px-4 py-2.5 text-sm hover:border-prompt/40 transition-colors cursor-pointer"
+          @click="copyCommand"
         >
-          {{ copied ? 'copied' : 'copy' }}
-        </span>
-      </button>
+          <span class="text-prompt">$</span>
+          <code class="text-term-bright">npx ccbuddy</code>
+          <span class="text-term-dim group-hover:text-term-muted transition-colors text-xs ml-1">
+            {{ copied ? '✓ copied' : 'copy' }}
+          </span>
+        </button>
+      </div>
+
+      <p class="text-term-muted text-xs text-center mt-4">
+        Force a legendary companion. No luck required.
+      </p>
     </section>
 
     <!-- Companions grid -->
-    <section class="px-6 pb-20 max-w-5xl mx-auto">
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <section class="px-4 sm:px-6 pb-16 max-w-5xl mx-auto">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div
-          v-for="c in companions"
+          v-for="(c, idx) in companions"
           :key="c.species"
-          class="group border rounded-lg p-5 bg-surface/50 hover:bg-surface transition-colors"
-          :class="[rarityBorders[c.rarity], rarityGlows[c.rarity]]"
+          class="group bg-term-surface border rounded-md overflow-hidden transition-colors hover:border-opacity-40"
+          :class="rarityBorder[c.rarity]"
         >
-          <!-- Rarity + species -->
-          <div class="flex items-center justify-between mb-3">
-            <div class="flex items-center gap-2">
-              <span class="text-xs" :class="rarityColors[c.rarity]">
+          <!-- Card title bar -->
+          <div class="flex items-center justify-between px-3 py-1.5 border-b border-term-border">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px]" :class="rarityColor[c.rarity]">
                 {{ rarityStars[c.rarity] }}
               </span>
               <span
-                class="text-xs font-medium uppercase tracking-wide"
-                :class="rarityColors[c.rarity]"
+                class="text-[11px] uppercase"
+                :class="rarityColor[c.rarity]"
               >
                 {{ c.rarity }}
               </span>
             </div>
-            <span v-if="c.hat !== 'none'" class="text-[10px] text-gray-500">
-              {{ c.hat }}
+            <span class="text-term-dim text-[10px]">
+              {{ c.species }}{{ c.hat !== 'none' ? ` +${c.hat}` : '' }}
             </span>
           </div>
 
-          <!-- ASCII sprite -->
-          <div class="mb-3 flex justify-center">
+          <!-- Sprite area -->
+          <div class="px-3 pt-3 pb-2 flex justify-center">
             <pre
-              class="text-sm leading-tight select-none"
-              :class="rarityColors[c.rarity]"
-            ><template v-if="c.hatLine">{{ c.hatLine }}
-</template><template v-for="(line, i) in c.sprite" :key="i">{{ line }}
+              class="text-[13px] leading-[1.3] select-none"
+              :class="rarityColor[c.rarity]"
+            ><template v-for="(line, i) in currentSprite(c, idx)" :key="i">{{ line }}
 </template></pre>
           </div>
 
-          <!-- Name + species -->
-          <p class="text-white text-sm font-semibold mb-0.5">{{ c.name }}</p>
-          <p class="text-gray-500 text-xs mb-2">{{ c.species }}</p>
-
-          <!-- Description -->
-          <p class="text-gray-400 text-xs leading-relaxed">
-            {{ c.description }}
-          </p>
+          <!-- Info -->
+          <div class="px-3 pb-3">
+            <div class="border-t border-term-border pt-2">
+              <p class="text-term-bright text-xs font-medium">{{ c.name }}</p>
+              <p class="text-term-dim text-[11px] mt-0.5">{{ c.description }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
     <!-- Footer -->
-    <footer class="border-t border-border px-6 py-8 text-center">
-      <p class="text-gray-500 text-xs">
+    <footer class="border-t border-term-border px-6 py-6 text-center">
+      <p class="text-term-dim text-[11px]">
         <a
-          href="https://github.com/vibenalytics/epic-buddy"
-          class="hover:text-gray-300 transition-colors"
+          href="https://github.com/vibenalytics/ccbuddy"
+          class="hover:text-term-muted transition-colors"
           target="_blank"
         >
-          github.com/vibenalytics/epic-buddy
+          github
         </a>
         <span class="mx-2">·</span>
         <a
-          href="https://www.npmjs.com/package/epic-buddy"
-          class="hover:text-gray-300 transition-colors"
+          href="https://www.npmjs.com/package/ccbuddy"
+          class="hover:text-term-muted transition-colors"
           target="_blank"
         >
           npm
         </a>
+        <span class="mx-2">·</span>
+        <span>vibenalytics</span>
       </p>
     </footer>
   </div>
