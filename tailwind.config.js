@@ -1,11 +1,9 @@
-import type { Config } from 'tailwindcss'
-
+/** @type {import('tailwindcss').Config} */
 export default {
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
-        // Terminal palette
         term: {
           bg: '#0c0c0c',
           surface: '#161616',
@@ -16,14 +14,12 @@ export default {
           bright: '#e0e0e0',
           white: '#f0f0f0',
         },
-        // Rarity colors - terminal ANSI-inspired
         common: '#808080',
         uncommon: '#5af78e',
         rare: '#57c7ff',
         epic: '#c792ea',
         legendary: '#f3f99d',
         shiny: '#ffb86c',
-        // Accent
         prompt: '#ff9e64',
       },
       fontFamily: {
@@ -31,4 +27,4 @@ export default {
       },
     },
   },
-} satisfies Config
+}
