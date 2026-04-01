@@ -2,6 +2,7 @@
 const copied = ref(false)
 const builderCopied = ref(false)
 const showBuilder = ref(false)
+const cardCopied = ref('')
 
 function copyCommand() {
   navigator.clipboard.writeText('npx ccbuddyy')
@@ -194,11 +195,11 @@ const rarityColor: Record<string, string> = {
 }
 
 const rarityBorder: Record<string, string> = {
-  common: 'border-common/20',
-  uncommon: 'border-uncommon/20',
-  rare: 'border-rare/20',
-  epic: 'border-epic/20',
-  legendary: 'border-legendary/25',
+  common: 'border-common/20 hover:border-common/50 hover:bg-common/5',
+  uncommon: 'border-uncommon/20 hover:border-uncommon/50 hover:bg-uncommon/5',
+  rare: 'border-rare/20 hover:border-rare/50 hover:bg-rare/5',
+  epic: 'border-epic/20 hover:border-epic/50 hover:bg-epic/5',
+  legendary: 'border-legendary/25 hover:border-legendary/50 hover:bg-legendary/5',
 }
 
 const rarityStars: Record<string, string> = {
@@ -288,6 +289,21 @@ function openBuilder() {
   showBuilder.value = true
 }
 
+function companionCommand(c: Companion): string {
+  const parts = ['npx ccbuddyy build']
+  parts.push(`-species ${c.species}`)
+  parts.push(`-rarity ${c.rarity}`)
+  parts.push(`-eye ${EYE_NAMES[c.eye] || 'dot'}`)
+  if (c.hat !== 'none') parts.push(`-hat ${c.hat}`)
+  return parts.join(' ') + ' ...'
+}
+
+function copyCard(c: Companion) {
+  navigator.clipboard.writeText(companionCommand(c))
+  cardCopied.value = c.species
+  setTimeout(() => (cardCopied.value = ''), 2000)
+}
+
 const canNext = computed(() => {
   if (builderStep.value === 0) return !!bSpecies.value
   if (builderStep.value === 1) return !!bRarity.value
@@ -375,6 +391,23 @@ const builderOdds = computed(() => {
   return { odds: Math.round(odds), label }
 })
 
+const ogBuddyHtml = computed(() => {
+  return '/buddy'
+    .split('')
+    .map((ch, i) => {
+      const color = RAINBOW[(i + rainbowOffset.value) % RAINBOW.length]
+      return `<span style="color:${color}">${ch}</span>`
+    })
+    .join('')
+})
+
+const ogCompanions = [
+  { species: 'dragon', eye: '✦', hat: 'crown', rarity: 'legendary' },
+  { species: 'cat', eye: '×', hat: 'halo', rarity: 'epic' },
+  { species: 'octopus', eye: '✦', hat: 'wizard', rarity: 'legendary' },
+  { species: 'ghost', eye: '°', hat: 'none', rarity: 'epic' },
+]
+
 function formatNumber(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
@@ -384,43 +417,70 @@ function formatNumber(n: number): string {
 
 <template>
   <div class="min-h-screen">
-    <!-- Terminal hero -->
-    <section class="px-4 sm:px-6 pt-12 sm:pt-16 pb-10 max-w-3xl mx-auto">
-      <div class="bg-term-surface border border-term-border rounded-md overflow-hidden">
-        <!-- Title bar -->
-        <div class="flex items-center gap-2 px-3 py-2 border-b border-term-border">
-          <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
-          <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
-          <span class="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-          <span class="text-term-dim text-[11px] ml-2">ccbuddyy</span>
-        </div>
-        <!-- Terminal body -->
-        <div class="p-4 sm:p-5">
-          <pre class="text-sm leading-relaxed whitespace-pre" v-html="terminalHtml" />
-        </div>
+    <!-- Hero -->
+    <section class="px-4 sm:px-6 pt-12 sm:pt-16 pb-10 max-w-5xl mx-auto overflow-hidden">
+      <!-- Mobile: companions row above title -->
+      <div class="flex justify-center gap-4 mb-6 sm:hidden">
+        <pre
+          v-for="(oc, i) in ogCompanions"
+          :key="'mob'+i"
+          class="text-[10px] leading-[1.2] select-none opacity-50"
+          :class="rarityColor[oc.rarity]"
+        ><template v-for="(line, li) in renderFrame(oc.species, oc.eye, oc.hat, IDLE_SEQUENCE[(tick + i * 4) % IDLE_SEQUENCE.length])" :key="li">{{ line }}
+</template></pre>
       </div>
 
-      <!-- Buttons -->
-      <div class="mt-6 flex justify-center gap-3">
-        <button
-          class="inline-flex items-center gap-2 bg-legendary border border-legendary rounded-md px-4 py-2.5 text-sm transition-all cursor-pointer text-[#0c0c0c] font-medium hover:brightness-110 hover:shadow-[0_0_12px_rgba(243,249,157,0.3)]"
-          @click="openBuilder()"
-        >
-          generate your buddy
-        </button>
-        <a
-          href="https://github.com/vibenalytics/ccbuddy"
-          target="_blank"
-          class="inline-flex items-center gap-2 bg-term-surface border border-term-border rounded-md px-4 py-2.5 text-sm hover:border-term-muted hover:bg-term-surface/80 transition-colors text-term-bright"
-        >
-          <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-          star on github
-        </a>
-      </div>
+      <div class="relative flex items-center justify-center sm:min-h-[20rem]">
+        <!-- Left companions (desktop) -->
+        <div class="absolute left-0 sm:left-8 top-1/2 -translate-y-1/2 flex-col gap-4 hidden sm:flex">
+          <pre
+            v-for="(oc, i) in ogCompanions.slice(0, 2)"
+            :key="'hl'+i"
+            class="text-base leading-[1.3] select-none opacity-40"
+            :class="rarityColor[oc.rarity]"
+          ><template v-for="(line, li) in renderFrame(oc.species, oc.eye, oc.hat, IDLE_SEQUENCE[(tick + i * 4) % IDLE_SEQUENCE.length])" :key="li">{{ line }}
+</template></pre>
+        </div>
 
-      <p class="text-term-muted text-xs text-center mt-4">
-        Force a legendary companion. No luck required.
-      </p>
+        <!-- Center -->
+        <div class="text-center z-10">
+          <p class="text-4xl sm:text-6xl font-bold text-term-white leading-tight">generate your</p>
+          <p class="text-5xl sm:text-7xl font-bold leading-tight mt-2" v-html="ogBuddyHtml" />
+
+          <!-- Buttons -->
+          <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <button
+              class="inline-flex items-center gap-2 bg-legendary border border-legendary rounded-md px-4 py-2 text-xs transition-all cursor-pointer text-[#0c0c0c] font-medium hover:brightness-110 hover:shadow-[0_0_12px_rgba(243,249,157,0.3)]"
+              @click="openBuilder()"
+            >
+              generate your buddy
+            </button>
+            <a
+              href="https://github.com/vibenalytics/ccbuddy"
+              target="_blank"
+              class="inline-flex items-center gap-2 bg-term-surface border border-term-border rounded-md px-4 py-2 text-xs hover:border-term-muted hover:bg-term-surface/80 transition-colors text-term-bright"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+              star on github
+            </a>
+          </div>
+
+          <p class="text-term-muted text-xs mt-4">
+            pick a legendary companion. no luck required.
+          </p>
+        </div>
+
+        <!-- Right companions (desktop) -->
+        <div class="absolute right-0 sm:right-8 top-1/2 -translate-y-1/2 flex-col gap-4 hidden sm:flex">
+          <pre
+            v-for="(oc, i) in ogCompanions.slice(2, 4)"
+            :key="'hr'+i"
+            class="text-base leading-[1.3] select-none opacity-40"
+            :class="rarityColor[oc.rarity]"
+          ><template v-for="(line, li) in renderFrame(oc.species, oc.eye, oc.hat, IDLE_SEQUENCE[(tick + (i + 2) * 4) % IDLE_SEQUENCE.length])" :key="li">{{ line }}
+</template></pre>
+        </div>
+      </div>
     </section>
 
     <!-- Builder fullscreen -->
@@ -492,7 +552,7 @@ function formatNumber(n: number): string {
             </div>
             <div class="flex justify-between mt-6">
               <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
-              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
+              <button class="text-sm rounded-md px-5 py-2.5 transition-all font-medium" :class="canNext ? 'bg-legendary text-[#0c0c0c] cursor-pointer hover:brightness-110' : 'bg-term-border text-term-dim cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -513,7 +573,7 @@ function formatNumber(n: number): string {
             </div>
             <div class="flex justify-between mt-6">
               <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
-              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
+              <button class="text-sm rounded-md px-5 py-2.5 transition-all font-medium" :class="canNext ? 'bg-legendary text-[#0c0c0c] cursor-pointer hover:brightness-110' : 'bg-term-border text-term-dim cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -534,7 +594,7 @@ function formatNumber(n: number): string {
             </div>
             <div class="flex justify-between mt-6">
               <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
-              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
+              <button class="text-sm rounded-md px-5 py-2.5 transition-all font-medium" :class="canNext ? 'bg-legendary text-[#0c0c0c] cursor-pointer hover:brightness-110' : 'bg-term-border text-term-dim cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -556,7 +616,7 @@ function formatNumber(n: number): string {
             </div>
             <div class="flex justify-between mt-6">
               <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
-              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
+              <button class="text-sm rounded-md px-5 py-2.5 transition-all font-medium" :class="canNext ? 'bg-legendary text-[#0c0c0c] cursor-pointer hover:brightness-110' : 'bg-term-border text-term-dim cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -590,9 +650,21 @@ function formatNumber(n: number): string {
         <div
           v-for="(c, idx) in companions"
           :key="c.species"
-          class="group bg-term-surface border rounded-md overflow-hidden transition-colors hover:border-opacity-40"
+          class="group relative bg-term-surface border rounded-md overflow-hidden transition-all hover:brightness-125 cursor-pointer"
           :class="rarityBorder[c.rarity]"
+          @click="copyCard(c)"
         >
+          <!-- Copied overlay -->
+          <Transition name="fade">
+            <div
+              v-if="cardCopied === c.species"
+              class="absolute inset-0 z-10 bg-[#0c0c0c]/90 flex flex-col items-center justify-center gap-2"
+            >
+              <span class="text-prompt text-sm">copied</span>
+              <span class="text-term-dim text-xs">paste in terminal</span>
+            </div>
+          </Transition>
+
           <!-- Card title bar -->
           <div class="flex items-center justify-between px-3 py-1.5 border-b border-term-border">
             <div class="flex items-center gap-1.5">
@@ -630,6 +702,7 @@ function formatNumber(n: number): string {
         </div>
       </div>
     </section>
+
 
     <!-- Footer -->
     <footer class="border-t border-term-border px-6 py-6 text-center">

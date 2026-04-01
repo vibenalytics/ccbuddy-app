@@ -24,7 +24,7 @@ export default {
         legendary: '#f3f99d',
         shiny: '#ffb86c',
         // Accent
-        prompt: '#5af78e',
+        prompt: '#ff9e64',
       },
       fontFamily: {
         mono: ['"JetBrains Mono"', '"Fira Code"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
