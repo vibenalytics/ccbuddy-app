@@ -562,7 +562,7 @@ function formatNumber(n: number): string {
           </div>
 
           <p class="text-term-muted text-xs mt-4">
-            pick a legendary companion. no luck required.
+            pick a legendary companion. no luck required. <a href="https://github.com/vibenalytics/ccbuddyy#readme" target="_blank" class="text-term-text hover:text-term-bright transition-colors underline underline-offset-2">how it works?</a>
           </p>
         </div>
 
