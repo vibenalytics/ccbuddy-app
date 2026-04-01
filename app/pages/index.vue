@@ -4,6 +4,13 @@ const copied = ref(false)
 const builderCopied = ref(false)
 const showBuilder = ref(false)
 const cardCopied = ref('')
+const showStarPopup = ref(false)
+
+function maybeShowStar() {
+  if (!showStarPopup.value) {
+    showStarPopup.value = true
+  }
+}
 
 function copyCommand() {
   navigator.clipboard.writeText('npx ccbuddyy')
@@ -16,6 +23,7 @@ function copyBuilderCommand() {
   builderCopied.value = true
   setTimeout(() => (builderCopied.value = false), 2000)
   trackBuilderCopy(bSpecies.value, bRarity.value, bEye.value, bHat.value)
+  maybeShowStar()
 }
 
 interface Companion {
@@ -257,6 +265,88 @@ const terminalHtml = computed(() => {
   ╰${'─'.repeat(w)}╯<span class="cursor-blink text-term-bright">█</span>`
 })
 
+// --- Random Generator Widget ---
+const RARITIES_WEIGHTED = ['common','common','common','common','common','common','uncommon','uncommon','uncommon','rare','rare','epic','legendary'] as const
+const ALL_SPECIES = [
+  'duck', 'goose', 'blob', 'cat', 'dragon', 'octopus', 'owl', 'penguin',
+  'turtle', 'snail', 'ghost', 'axolotl', 'capybara', 'cactus', 'robot',
+  'rabbit', 'mushroom', 'chonk',
+]
+const ALL_EYES = ['·', '✦', '×', '◉', '@', '°']
+const ALL_HATS = ['none', 'crown', 'tophat', 'propeller', 'halo', 'wizard', 'beanie', 'tinyduck']
+
+function pick<T>(arr: readonly T[]): T { return arr[Math.floor(Math.random() * arr.length)] }
+
+function rollRandom() {
+  const rarity = pick(RARITIES_WEIGHTED) as string
+  const species = pick(ALL_SPECIES)
+  const eye = pick(ALL_EYES)
+  const hat = rarity === 'common' ? 'none' : pick(ALL_HATS)
+  return { species, rarity, eye, hat }
+}
+
+const randResult = ref(rollRandom())
+const randScrambling = ref(true)
+const randCopied = ref(false)
+let scrambleTimer: ReturnType<typeof setInterval>
+
+function startScramble() {
+  randScrambling.value = true
+  let count = 0
+  clearInterval(scrambleTimer)
+  scrambleTimer = setInterval(() => {
+    randResult.value = rollRandom()
+    count++
+    if (count >= 12) {
+      clearInterval(scrambleTimer)
+      randScrambling.value = false
+    }
+  }, 80)
+}
+
+function regenRandom() {
+  startScramble()
+}
+
+function copyRandom() {
+  const r = randResult.value
+  const parts = ['npx ccbuddyy build']
+  parts.push(`-species ${r.species}`)
+  parts.push(`-rarity ${r.rarity}`)
+  parts.push(`-eye ${EYE_NAMES[r.eye] || 'dot'}`)
+  if (r.hat !== 'none') parts.push(`-hat ${r.hat}`)
+  navigator.clipboard.writeText(parts.join(' ') + ' ...')
+  randCopied.value = true
+  setTimeout(() => (randCopied.value = false), 2000)
+  maybeShowStar()
+}
+
+const randSprite = computed(() => {
+  const r = randResult.value
+  return renderFrame(r.species, r.eye, r.hat, 0)
+})
+
+const RARITY_CHANCE: Record<string, number> = {
+  common: 60, uncommon: 25, rare: 10, epic: 4, legendary: 1,
+}
+
+const randOdds = computed(() => {
+  const r = randResult.value
+  const rarityDenom = 100 / RARITY_CHANCE[r.rarity]
+  const speciesDenom = 18
+  const eyeDenom = 6
+  const hatDenom = r.rarity === 'common' ? 1 : 8
+  return Math.round(rarityDenom * speciesDenom * eyeDenom * hatDenom)
+})
+
+onMounted(() => {
+  startScramble()
+})
+
+onUnmounted(() => {
+  clearInterval(scrambleTimer)
+})
+
 // --- Builder (multi-step) ---
 const SPECIES_LIST = [
   'duck', 'goose', 'blob', 'cat', 'dragon', 'octopus', 'owl', 'penguin',
@@ -306,6 +396,7 @@ function copyCard(c: Companion) {
   cardCopied.value = c.species
   setTimeout(() => (cardCopied.value = ''), 2000)
   trackCardCopy(c.species, c.rarity)
+  maybeShowStar()
 }
 
 const canNext = computed(() => {
@@ -370,10 +461,6 @@ const builderCommand = computed(() => {
   return parts.join(' ') + ' ...'
 })
 
-// Odds calculation
-const RARITY_CHANCE: Record<string, number> = {
-  common: 60, uncommon: 25, rare: 10, epic: 4, legendary: 1,
-}
 
 const builderOdds = computed(() => {
   if (!bRarity.value || !bSpecies.value) return { odds: 0, label: '' }
@@ -426,7 +513,7 @@ function formatNumber(n: number): string {
 <template>
   <div class="min-h-screen">
     <!-- Hero -->
-    <section class="px-4 sm:px-6 pt-12 sm:pt-16 pb-10 max-w-5xl mx-auto overflow-hidden">
+    <section class="px-4 sm:px-6 pt-6 sm:pt-8 pb-10 max-w-5xl mx-auto overflow-hidden">
       <!-- Mobile: companions row above title -->
       <div class="flex justify-center gap-4 mb-6 sm:hidden">
         <pre
@@ -452,8 +539,8 @@ function formatNumber(n: number): string {
 
         <!-- Center -->
         <div class="text-center z-10">
-          <p class="text-4xl sm:text-6xl font-bold text-term-white leading-tight">generate your</p>
-          <p class="text-5xl sm:text-7xl font-bold leading-tight mt-2" v-html="ogBuddyHtml" />
+          <p class="text-3xl sm:text-5xl font-bold text-term-white leading-tight">generate your</p>
+          <p class="text-4xl sm:text-6xl font-bold leading-tight mt-2" v-html="ogBuddyHtml" />
 
           <!-- Buttons -->
           <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -461,10 +548,10 @@ function formatNumber(n: number): string {
               class="inline-flex items-center gap-2 bg-legendary border border-legendary rounded-md px-4 py-2 text-xs transition-all cursor-pointer text-[#0c0c0c] font-medium hover:brightness-110 hover:shadow-[0_0_12px_rgba(243,249,157,0.3)]"
               @click="openBuilder()"
             >
-              generate your buddy
+              generate your /buddy
             </button>
             <a
-              href="https://github.com/vibenalytics/ccbuddy"
+              href="https://github.com/vibenalytics/ccbuddyy"
               target="_blank"
               class="inline-flex items-center gap-2 bg-term-surface border border-term-border rounded-md px-4 py-2 text-xs hover:border-term-muted hover:bg-term-surface/80 transition-colors text-term-bright"
               @click="githubClicked()"
@@ -646,15 +733,67 @@ function formatNumber(n: number): string {
               run this inside of your terminal with claude installed
             </p>
             <p class="text-center text-term-dim text-xs mt-3">
-              don't forget to <a href="https://github.com/vibenalytics/ccbuddy" target="_blank" class="text-legendary hover:text-legendary/80 transition-colors">star our repo</a>
+              don't forget to <a href="https://github.com/vibenalytics/ccbuddyy" target="_blank" class="text-legendary hover:text-legendary/80 transition-colors">star our repo</a>
             </p>
           </div>
         </div>
       </div>
     </Teleport>
 
+    <!-- Random roll -->
+    <section class="px-4 sm:px-6 pb-8 max-w-5xl mx-auto">
+      <div class="max-w-xs mx-auto">
+        <div class="group relative bg-term-surface border border-legendary/30 rounded-md overflow-hidden transition-all hover:brightness-125">
+          <!-- Title bar -->
+          <div class="flex items-center justify-between px-3 py-1.5 border-b border-term-border">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] text-legendary">⚡</span>
+              <span class="text-[11px] uppercase text-legendary">random roll</span>
+            </div>
+            <span class="text-term-dim text-[10px]">1 in {{ randOdds.toLocaleString() }}</span>
+          </div>
+
+          <!-- Sprite -->
+          <div class="px-4 pt-4 pb-3 flex justify-center">
+            <pre
+              class="text-lg leading-[1.3] select-none"
+              :class="[rarityColor[randResult.rarity], randScrambling ? 'opacity-50' : 'opacity-100']"
+              style="transition: opacity 0.15s"
+            ><template v-for="(line, i) in randSprite" :key="i">{{ line }}
+</template></pre>
+          </div>
+
+          <!-- Info -->
+          <div class="px-3 pb-3">
+            <div class="border-t border-term-border pt-2">
+              <div class="flex items-center gap-1.5 mb-1">
+                <span class="text-[11px]" :class="rarityColor[randResult.rarity]">{{ rarityStars[randResult.rarity] }}</span>
+                <span class="text-term-bright text-xs font-medium">{{ randResult.rarity }} {{ randResult.species }}</span>
+                <span v-if="randResult.hat !== 'none'" class="text-term-dim text-[11px]">+{{ randResult.hat }}</span>
+              </div>
+              <div class="flex gap-2 mt-2">
+                <button
+                  class="flex-1 text-[11px] border border-term-border rounded px-2 py-1.5 text-term-muted hover:text-term-bright hover:border-term-muted transition-colors cursor-pointer"
+                  @click="regenRandom()"
+                >
+                  ↻ reroll
+                </button>
+                <button
+                  class="flex-1 text-[11px] bg-legendary text-[#0c0c0c] font-medium rounded px-2 py-1.5 transition-all cursor-pointer hover:brightness-110"
+                  @click="copyRandom()"
+                >
+                  {{ randCopied ? '✓ copied' : 'copy command' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Companions grid -->
     <section class="px-4 sm:px-6 pb-16 max-w-5xl mx-auto">
+      <p class="text-term-muted text-sm mb-4">most favourite</p>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <div
           v-for="(c, idx) in companions"
@@ -713,11 +852,50 @@ function formatNumber(n: number): string {
     </section>
 
 
+    <!-- Star popup -->
+    <Teleport to="body">
+      <Transition name="fade">
+        <div
+          v-if="showStarPopup"
+          class="fixed inset-0 z-[60] flex items-center justify-center bg-[#0c0c0c]/80"
+          @click.self="showStarPopup = false"
+        >
+          <div class="bg-[#0c0c0c] border border-term-border rounded-md p-6 max-w-sm mx-4 text-center">
+            <!-- Meme placeholder -->
+            <div class="bg-term-border rounded-md w-full aspect-square flex items-center justify-center mb-5">
+              <img src="/meme.webp" alt="meme" class="w-full h-full object-cover rounded-md" />
+            </div>
+
+            <p class="text-term-bright text-sm font-medium mb-2">command copied!</p>
+            <p class="text-term-muted text-xs mb-5">if this helped you, consider starring the repo</p>
+
+            <div class="flex gap-3">
+              <button
+                class="flex-1 text-xs border border-term-border rounded-md px-3 py-2 text-term-muted hover:text-term-bright hover:border-term-muted transition-colors cursor-pointer"
+                @click="showStarPopup = false"
+              >
+                maybe later
+              </button>
+              <a
+                href="https://github.com/vibenalytics/ccbuddyy"
+                target="_blank"
+                class="flex-1 inline-flex items-center justify-center gap-2 bg-legendary text-[#0c0c0c] font-medium text-xs rounded-md px-3 py-2 transition-all hover:brightness-110"
+                @click="showStarPopup = false; githubClicked()"
+              >
+                <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+                star on github
+              </a>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
+
     <!-- Footer -->
     <footer class="border-t border-term-border px-6 py-6 text-center">
       <p class="text-term-dim text-[11px]">
         <a
-          href="https://github.com/vibenalytics/ccbuddy"
+          href="https://github.com/vibenalytics/ccbuddyy"
           class="hover:text-term-muted transition-colors"
           target="_blank"
         >
