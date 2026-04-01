@@ -315,7 +315,7 @@ function copyRandom() {
   parts.push(`-rarity ${r.rarity}`)
   parts.push(`-eye ${EYE_NAMES[r.eye] || 'dot'}`)
   if (r.hat !== 'none') parts.push(`-hat ${r.hat}`)
-  navigator.clipboard.writeText(parts.join(' ') + ' ...')
+  navigator.clipboard.writeText(parts.join(' '))
   randCopied.value = true
   setTimeout(() => (randCopied.value = false), 2000)
   maybeShowStar()
@@ -760,7 +760,7 @@ function formatNumber(n: number): string {
           <div v-if="builderStep === 5">
             <!-- Command + Copy -->
             <div class="bg-term-surface border border-term-border rounded-md px-5 py-4 mb-4 flex items-center gap-3">
-              <pre class="text-sm text-term-text overflow-x-auto flex-1"><span class="text-prompt">$</span> {{ builderCommand }}</pre>
+              <pre class="text-sm text-term-text overflow-x-auto flex-1"><span class="text-prompt">$</span> {{ builderCommand }} <span class="text-term-dim">...</span></pre>
               <button
                 class="shrink-0 bg-legendary text-[#0c0c0c] font-medium rounded-md px-4 py-2 text-sm cursor-pointer transition-colors hover:bg-legendary/80"
                 @click="copyBuilderCommand"
