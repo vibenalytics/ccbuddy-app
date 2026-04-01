@@ -390,8 +390,7 @@ function companionCommand(c: Companion): string {
   parts.push(`-rarity ${c.rarity}`)
   parts.push(`-eye ${EYE_NAMES[c.eye] || 'dot'}`)
   if (c.hat !== 'none') parts.push(`-hat ${c.hat}`)
-  return parts.join(' ') + ' ...'
-}
+  return parts.join(' ')}
 
 function copyCard(c: Companion) {
   navigator.clipboard.writeText(companionCommand(c))
@@ -462,8 +461,7 @@ const builderCommand = computed(() => {
   parts.push(`-eye ${EYE_NAMES[bEye.value] || 'dot'}`)
   if (bHat.value !== 'none') parts.push(`-hat ${bHat.value}`)
   if (bShiny.value) parts.push('-shiny')
-  return parts.join(' ') + ' ...'
-})
+  return parts.join(' ')})
 
 
 const builderOdds = computed(() => {
