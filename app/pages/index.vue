@@ -364,13 +364,14 @@ const EYE_LIST = ['·', '✦', '×', '◉', '@', '°']
 const EYE_NAMES: Record<string, string> = { '·': 'dot', '✦': 'star', '×': 'x', '◉': 'circle', '@': 'at', '°': 'degree' }
 const HAT_LIST = ['none', 'crown', 'tophat', 'propeller', 'halo', 'wizard', 'beanie', 'tinyduck']
 
-const builderStep = ref(0) // 0=species, 1=rarity, 2=eyes, 3=hat, 4=result
-const STEPS = ['species', 'rarity', 'eyes', 'hat', 'result']
+const builderStep = ref(0) // 0=species, 1=rarity, 2=eyes, 3=hat, 4=shiny, 5=result
+const STEPS = ['species', 'rarity', 'eyes', 'hat', 'shiny', 'result']
 
 const bSpecies = ref('duck')
 const bRarity = ref('legendary')
 const bEye = ref('·')
 const bHat = ref('none')
+const bShiny = ref(false)
 
 function openBuilder() {
   builderStep.value = 0
@@ -378,6 +379,7 @@ function openBuilder() {
   bRarity.value = RARITY_LIST[0].value
   bEye.value = EYE_LIST[0]
   bHat.value = HAT_LIST[0]
+  bShiny.value = false
   showBuilder.value = true
   builderOpened()
 }
@@ -404,6 +406,7 @@ const canNext = computed(() => {
   if (builderStep.value === 1) return !!bRarity.value
   if (builderStep.value === 2) return !!bEye.value
   if (builderStep.value === 3) return !!bHat.value
+  if (builderStep.value === 4) return true // shiny is optional toggle
   return false
 })
 
@@ -458,6 +461,7 @@ const builderCommand = computed(() => {
   parts.push(`-rarity ${bRarity.value}`)
   parts.push(`-eye ${EYE_NAMES[bEye.value] || 'dot'}`)
   if (bHat.value !== 'none') parts.push(`-hat ${bHat.value}`)
+  if (bShiny.value) parts.push('-shiny')
   return parts.join(' ') + ' ...'
 })
 
@@ -481,6 +485,12 @@ const builderOdds = computed(() => {
   if (builderStep.value >= 3 && bHat.value !== 'none') {
     odds *= hatDenom
     label += ` + ${bHat.value}`
+  }
+
+  // step 4+: shiny
+  if (builderStep.value >= 4 && bShiny.value) {
+    odds *= 100
+    label += ' + shiny'
   }
 
   return { odds: Math.round(odds), label }
@@ -623,6 +633,7 @@ function formatNumber(n: number): string {
                 <span v-if="builderStep >= 1" :class="rarityColor[bRarity]">{{ bRarity }}</span>
                 {{ bSpecies }}
                 <span v-if="builderStep >= 3 && bHat !== 'none'">+{{ bHat }}</span>
+                <span v-if="builderStep >= 4 && bShiny" class="text-shiny">✨ shiny</span>
               </p>
               <p class="text-xs text-term-dim mt-1">
                 1 in {{ builderOdds.odds.toLocaleString() }} · ~{{ formatNumber(builderOdds.odds) }} iterations
@@ -716,8 +727,39 @@ function formatNumber(n: number): string {
             </div>
           </div>
 
-          <!-- Step 4: Result -->
+          <!-- Step 4: Shiny -->
           <div v-if="builderStep === 4">
+            <p class="text-term-muted text-sm mb-5">shiny variant</p>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                class="flex flex-col items-center border rounded-md py-6 px-3 cursor-pointer transition-colors"
+                :class="!bShiny ? 'border-legendary/60 bg-legendary/10' : 'border-term-border hover:border-term-muted hover:bg-term-surface bg-term-surface/50'"
+                @click="bShiny = false"
+              >
+                <span class="text-2xl mb-2">🌑</span>
+                <span class="text-xs" :class="!bShiny ? 'text-legendary' : 'text-term-dim'">normal</span>
+              </button>
+              <button
+                class="flex flex-col items-center border rounded-md py-6 px-3 cursor-pointer transition-colors"
+                :class="bShiny ? 'border-shiny/60 bg-shiny/10' : 'border-term-border hover:border-term-muted hover:bg-term-surface bg-term-surface/50'"
+                @click="bShiny = true"
+              >
+                <span class="text-2xl mb-2">✨</span>
+                <span class="text-xs" :class="bShiny ? 'text-shiny' : 'text-term-dim'">shiny</span>
+              </button>
+            </div>
+            <div v-if="bShiny" class="mt-4 border border-shiny/40 bg-shiny/5 rounded-md px-4 py-3">
+              <p class="text-shiny text-xs font-medium mb-1">⚠ Warning: this will take a while</p>
+              <p class="text-term-dim text-xs">Shiny is a 1% independent roll on top of everything else. This makes the search ~100x slower. A legendary shiny dragon can take millions of iterations.</p>
+            </div>
+            <div class="flex justify-between mt-6">
+              <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
+              <button class="text-sm rounded-md px-5 py-2.5 transition-all font-medium bg-legendary text-[#0c0c0c] cursor-pointer hover:brightness-110" @click="nextStep()">next →</button>
+            </div>
+          </div>
+
+          <!-- Step 5: Result -->
+          <div v-if="builderStep === 5">
             <!-- Command + Copy -->
             <div class="bg-term-surface border border-term-border rounded-md px-5 py-4 mb-4 flex items-center gap-3">
               <pre class="text-sm text-term-text overflow-x-auto flex-1"><span class="text-prompt">$</span> {{ builderCommand }}</pre>
