@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run generate
+RUN npm run build
 
 FROM node:22-alpine AS prod
 WORKDIR /app
