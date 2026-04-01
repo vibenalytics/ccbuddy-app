@@ -1,3 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <text x="4" y="26" font-size="26">★</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0c0c0c"/>
+  <!-- Rainbow dots -->
+  <circle cx="140" cy="52" r="14" fill="rgb(250,155,147)"/>
+  <circle cx="256" cy="46" r="14" fill="rgb(255,225,155)"/>
+  <circle cx="372" cy="52" r="14" fill="rgb(185,230,180)"/>
+  <!-- Title -->
+  <text x="256" y="130" font-family="monospace" font-size="52" font-weight="bold" fill="#e0e0e0" text-anchor="middle">generate your</text>
+  <!-- /buddy rainbow -->
+  <text x="256" y="200" font-family="monospace" font-size="72" font-weight="bold" text-anchor="middle">
+    <tspan fill="rgb(250,155,147)">/</tspan><tspan fill="rgb(255,185,137)">b</tspan><tspan fill="rgb(255,225,155)">u</tspan><tspan fill="rgb(185,230,180)">d</tspan><tspan fill="rgb(180,205,240)">d</tspan><tspan fill="rgb(195,180,230)">y</tspan>
+  </text>
+  <!-- Dragon ASCII art -->
+  <text x="256" y="300" font-family="monospace" font-size="48" fill="#f3f99d" text-anchor="middle" opacity="0.9">/^\  /^\</text>
+  <text x="256" y="355" font-family="monospace" font-size="48" fill="#f3f99d" text-anchor="middle" opacity="0.9">&lt;  ✦  ✦  &gt;</text>
+  <text x="256" y="410" font-family="monospace" font-size="48" fill="#f3f99d" text-anchor="middle" opacity="0.9">(   ~~   )</text>
+  <text x="256" y="465" font-family="monospace" font-size="48" fill="#f3f99d" text-anchor="middle" opacity="0.9">`-vvvv-´</text>
 </svg>
