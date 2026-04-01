@@ -3,6 +3,11 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      gtagId: process.env.GTAG_ID || 'G-X3180345DV',
+    },
+  },
   app: {
     head: {
       title: 'CCBuddy - Pick your Claude Code companion',
