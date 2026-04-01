@@ -3,7 +3,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build
+RUN cat tailwind.config.js && npm run build
 
 FROM node:22-alpine AS prod
 WORKDIR /app
