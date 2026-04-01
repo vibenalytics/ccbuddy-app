@@ -2,7 +2,7 @@
 const copied = ref(false)
 
 function copyCommand() {
-  navigator.clipboard.writeText('npx ccbuddy')
+  navigator.clipboard.writeText('npx ccbuddyy')
   copied.value = true
   setTimeout(() => (copied.value = false), 2000)
 }
@@ -221,18 +221,29 @@ onMounted(() => {
   }, 120)
 })
 
-const bannerText = 'CCBUDDY'
-const boxWidth = 38 // inner width of the box
-const padAfterBanner = boxWidth - 2 - bannerText.length // "  " prefix already in template
+const bannerText = '/buddy'
+const line2 = 'Pick your /buddy companion'
 
-const rainbowHtml = computed(() => {
-  return bannerText
+const terminalHtml = computed(() => {
+  const rb = bannerText
     .split('')
     .map((ch, i) => {
       const color = RAINBOW[(i + rainbowOffset.value) % RAINBOW.length]
       return `<span style="color:${color}">${ch}</span>`
     })
     .join('')
+
+  const w = 38
+  const pad1 = ' '.repeat(w - 2 - bannerText.length)
+  const pad2 = ' '.repeat(w - 2 - line2.length)
+  const line2Html = '<span class="text-term-text">Pick your</span> <span class="text-term-bright">/buddy</span> <span class="text-term-text">companion</span>'
+
+  return `<span class="text-term-muted">$ npx ccbuddyy</span>
+
+  ╭${'─'.repeat(w)}╮
+  │  ${rb}${pad1}│
+  │  ${line2Html}${pad2}│
+  ╰${'─'.repeat(w)}╯<span class="cursor-blink text-term-bright">█</span>`
 })
 </script>
 
@@ -246,16 +257,11 @@ const rainbowHtml = computed(() => {
           <span class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
           <span class="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
           <span class="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
-          <span class="text-term-dim text-[11px] ml-2">ccbuddy</span>
+          <span class="text-term-dim text-[11px] ml-2">ccbuddyy</span>
         </div>
         <!-- Terminal body -->
         <div class="p-4 sm:p-5">
-          <pre class="text-sm leading-relaxed whitespace-pre"><span class="text-term-muted">$ npx ccbuddy</span>
-
-  ╭──────────────────────────────────────╮
-  │  <span v-html="rainbowHtml" />{{ ' '.repeat(padAfterBanner) }}│
-  │  <span class="text-term-text">Pick your</span> <span class="text-term-bright">/buddy</span> <span class="text-term-text">companion</span>            │
-  ╰──────────────────────────────────────╯<span class="cursor-blink text-term-bright">█</span></pre>
+          <pre class="text-sm leading-relaxed whitespace-pre" v-html="terminalHtml" />
         </div>
       </div>
 
@@ -266,7 +272,7 @@ const rainbowHtml = computed(() => {
           @click="copyCommand"
         >
           <span class="text-prompt">$</span>
-          <code class="text-term-bright">npx ccbuddy</code>
+          <code class="text-term-bright">npx ccbuddyy</code>
           <span class="text-term-dim group-hover:text-term-muted transition-colors text-xs ml-1">
             {{ copied ? '✓ copied' : 'copy' }}
           </span>
@@ -337,7 +343,7 @@ const rainbowHtml = computed(() => {
         </a>
         <span class="mx-2">·</span>
         <a
-          href="https://www.npmjs.com/package/ccbuddy"
+          href="https://www.npmjs.com/package/ccbuddyy"
           class="hover:text-term-muted transition-colors"
           target="_blank"
         >
