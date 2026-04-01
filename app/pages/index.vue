@@ -260,12 +260,12 @@ const SPECIES_LIST = [
   'turtle', 'snail', 'ghost', 'axolotl', 'capybara', 'cactus', 'robot',
   'rabbit', 'mushroom', 'chonk',
 ]
-const RARITY_LIST: Array<{ value: string; label: string; stars: string; color: string }> = [
-  { value: 'legendary', label: 'legendary', stars: '★★★★★', color: 'text-legendary' },
-  { value: 'epic', label: 'epic', stars: '★★★★', color: 'text-epic' },
-  { value: 'rare', label: 'rare', stars: '★★★', color: 'text-rare' },
-  { value: 'uncommon', label: 'uncommon', stars: '★★', color: 'text-uncommon' },
-  { value: 'common', label: 'common', stars: '★', color: 'text-common' },
+const RARITY_LIST: Array<{ value: string; label: string; stars: string; color: string; border: string; borderHover: string; bgSelected: string }> = [
+  { value: 'legendary', label: 'legendary', stars: '★★★★★', color: 'text-legendary', border: 'border-legendary/30', borderHover: 'hover:border-legendary/50 hover:bg-legendary/5', bgSelected: 'border-legendary/60 bg-legendary/15' },
+  { value: 'epic', label: 'epic', stars: '★★★★', color: 'text-epic', border: 'border-epic/30', borderHover: 'hover:border-epic/50 hover:bg-epic/5', bgSelected: 'border-epic/60 bg-epic/15' },
+  { value: 'rare', label: 'rare', stars: '★★★', color: 'text-rare', border: 'border-rare/30', borderHover: 'hover:border-rare/50 hover:bg-rare/5', bgSelected: 'border-rare/60 bg-rare/15' },
+  { value: 'uncommon', label: 'uncommon', stars: '★★', color: 'text-uncommon', border: 'border-uncommon/30', borderHover: 'hover:border-uncommon/50 hover:bg-uncommon/5', bgSelected: 'border-uncommon/60 bg-uncommon/15' },
+  { value: 'common', label: 'common', stars: '★', color: 'text-common', border: 'border-common/30', borderHover: 'hover:border-common/50 hover:bg-common/5', bgSelected: 'border-common/60 bg-common/15' },
 ]
 const EYE_LIST = ['·', '✦', '×', '◉', '@', '°']
 const EYE_NAMES: Record<string, string> = { '·': 'dot', '✦': 'star', '×': 'x', '◉': 'circle', '@': 'at', '°': 'degree' }
@@ -274,19 +274,30 @@ const HAT_LIST = ['none', 'crown', 'tophat', 'propeller', 'halo', 'wizard', 'bea
 const builderStep = ref(0) // 0=species, 1=rarity, 2=eyes, 3=hat, 4=result
 const STEPS = ['species', 'rarity', 'eyes', 'hat', 'result']
 
-const bSpecies = ref('dragon')
+const bSpecies = ref('duck')
 const bRarity = ref('legendary')
-const bEye = ref('✦')
-const bHat = ref('crown')
-const bShiny = ref(false)
+const bEye = ref('·')
+const bHat = ref('none')
 
 function openBuilder() {
   builderStep.value = 0
+  bSpecies.value = SPECIES_LIST[0]
+  bRarity.value = RARITY_LIST[0].value
+  bEye.value = EYE_LIST[0]
+  bHat.value = HAT_LIST[0]
   showBuilder.value = true
 }
 
+const canNext = computed(() => {
+  if (builderStep.value === 0) return !!bSpecies.value
+  if (builderStep.value === 1) return !!bRarity.value
+  if (builderStep.value === 2) return !!bEye.value
+  if (builderStep.value === 3) return !!bHat.value
+  return false
+})
+
 function nextStep() {
-  if (builderStep.value < STEPS.length - 1) builderStep.value++
+  if (canNext.value && builderStep.value < STEPS.length - 1) builderStep.value++
 }
 
 function prevStep() {
@@ -332,9 +343,43 @@ const builderCommand = computed(() => {
   parts.push(`-rarity ${bRarity.value}`)
   parts.push(`-eye ${EYE_NAMES[bEye.value] || 'dot'}`)
   if (bHat.value !== 'none') parts.push(`-hat ${bHat.value}`)
-  if (bShiny.value) parts.push('-shiny')
-  return parts.join(' ')
+  return parts.join(' ') + ' ...'
 })
+
+// Odds calculation
+const RARITY_CHANCE: Record<string, number> = {
+  common: 60, uncommon: 25, rare: 10, epic: 4, legendary: 1,
+}
+
+const builderOdds = computed(() => {
+  if (!bRarity.value || !bSpecies.value) return { odds: 0, label: '' }
+  const rarityDenom = 100 / RARITY_CHANCE[bRarity.value]
+  const speciesDenom = 18
+  const eyeDenom = 6
+  const hatDenom = bRarity.value === 'common' ? 1 : 8
+  let odds = rarityDenom * speciesDenom // rarity + species always
+  let label = `${bRarity.value} + ${bSpecies.value}`
+
+  // step 2+: eyes
+  if (builderStep.value >= 2) {
+    odds *= eyeDenom
+    label += ` + ${EYE_NAMES[bEye.value] || 'eye'}`
+  }
+
+  // step 3+: hat
+  if (builderStep.value >= 3 && bHat.value !== 'none') {
+    odds *= hatDenom
+    label += ` + ${bHat.value}`
+  }
+
+  return { odds: Math.round(odds), label }
+})
+
+function formatNumber(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`
+  return n.toString()
+}
 </script>
 
 <template>
@@ -358,21 +403,19 @@ const builderCommand = computed(() => {
       <!-- Buttons -->
       <div class="mt-6 flex justify-center gap-3">
         <button
-          class="group inline-flex items-center gap-3 bg-term-surface border border-term-border rounded-md px-4 py-2.5 text-sm hover:border-prompt/40 transition-colors cursor-pointer"
-          @click="copyCommand"
-        >
-          <span class="text-prompt">$</span>
-          <code class="text-term-bright">npx ccbuddyy</code>
-          <span class="text-term-dim group-hover:text-term-muted transition-colors text-xs ml-1">
-            {{ copied ? '✓ copied' : 'copy' }}
-          </span>
-        </button>
-        <button
-          class="inline-flex items-center gap-2 bg-term-surface border border-term-border rounded-md px-4 py-2.5 text-sm hover:border-legendary/40 transition-colors cursor-pointer text-term-muted hover:text-legendary"
+          class="inline-flex items-center gap-2 bg-legendary border border-legendary rounded-md px-4 py-2.5 text-sm transition-all cursor-pointer text-[#0c0c0c] font-medium hover:brightness-110 hover:shadow-[0_0_12px_rgba(243,249,157,0.3)]"
           @click="openBuilder()"
         >
-          create your own
+          generate your buddy
         </button>
+        <a
+          href="https://github.com/vibenalytics/ccbuddy"
+          target="_blank"
+          class="inline-flex items-center gap-2 bg-term-surface border border-term-border rounded-md px-4 py-2.5 text-sm hover:border-term-muted hover:bg-term-surface/80 transition-colors text-term-bright"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          star on github
+        </a>
       </div>
 
       <p class="text-term-muted text-xs text-center mt-4">
@@ -425,6 +468,9 @@ const builderCommand = computed(() => {
                 {{ bSpecies }}
                 <span v-if="builderStep >= 3 && bHat !== 'none'">+{{ bHat }}</span>
               </p>
+              <p class="text-xs text-term-dim mt-1">
+                1 in {{ builderOdds.odds.toLocaleString() }} · ~{{ formatNumber(builderOdds.odds) }} iterations
+              </p>
             </div>
           </div>
 
@@ -436,36 +482,38 @@ const builderCommand = computed(() => {
                 v-for="s in SPECIES_LIST"
                 :key="s"
                 class="flex flex-col items-center border rounded-md py-4 px-2 cursor-pointer transition-colors"
-                :class="bSpecies === s ? 'border-prompt/50 bg-term-surface' : 'border-term-border hover:border-term-muted bg-term-surface/50'"
+                :class="bSpecies === s ? 'border-legendary/60 bg-legendary/10' : 'border-term-border hover:border-term-muted hover:bg-term-surface bg-term-surface/50'"
                 @click="selectSpecies(s)"
               >
-                <pre class="text-[11px] leading-[1.2] select-none text-term-bright mb-2"><template v-for="(line, i) in miniSprite(s)" :key="i">{{ line }}
+                <pre class="text-[11px] leading-[1.2] select-none mb-2" :class="bSpecies === s ? 'text-legendary' : 'text-term-bright'"><template v-for="(line, i) in miniSprite(s)" :key="i">{{ line }}
 </template></pre>
-                <span class="text-xs text-term-dim">{{ s }}</span>
+                <span class="text-xs" :class="bSpecies === s ? 'text-legendary' : 'text-term-dim'">{{ s }}</span>
               </button>
             </div>
-            <div class="flex justify-end mt-6">
-              <button class="text-sm text-term-muted hover:text-prompt border border-term-border hover:border-prompt/40 rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="nextStep()">next →</button>
+            <div class="flex justify-between mt-6">
+              <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
+              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
           <!-- Step 1: Rarity -->
           <div v-if="builderStep === 1">
-            <p class="text-term-muted text-sm mb-5">choose rarity</p>
-            <div class="flex flex-col gap-3">
+            <p class="text-term-muted text-sm mb-5">choose color</p>
+            <div class="flex flex-wrap gap-2 justify-center">
               <button
                 v-for="r in RARITY_LIST"
                 :key="r.value"
-                class="flex items-center gap-4 border rounded-md px-5 py-4 cursor-pointer transition-colors"
-                :class="bRarity === r.value ? 'border-prompt/50 bg-term-surface' : 'border-term-border hover:border-term-muted bg-term-surface/50'"
+                class="flex items-center gap-2 border rounded-md px-3 py-2 cursor-pointer transition-colors"
+                :class="bRarity === r.value ? r.bgSelected : [r.border, r.borderHover]"
                 @click="selectRarity(r.value)"
               >
-                <span class="text-base" :class="r.color">{{ r.stars }}</span>
-                <span class="text-sm" :class="r.color">{{ r.label }}</span>
+                <span class="text-xs" :class="r.color">{{ r.stars }}</span>
+                <span class="text-xs" :class="r.color">{{ r.label }}</span>
               </button>
             </div>
-            <div class="flex justify-end mt-6">
-              <button class="text-sm text-term-muted hover:text-prompt border border-term-border hover:border-prompt/40 rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="nextStep()">next →</button>
+            <div class="flex justify-between mt-6">
+              <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
+              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -477,15 +525,16 @@ const builderCommand = computed(() => {
                 v-for="e in EYE_LIST"
                 :key="e"
                 class="flex flex-col items-center border rounded-md py-6 cursor-pointer transition-colors"
-                :class="bEye === e ? 'border-prompt/50 bg-term-surface' : 'border-term-border hover:border-term-muted bg-term-surface/50'"
+                :class="bEye === e ? 'border-legendary/60 bg-legendary/10' : 'border-term-border hover:border-term-muted hover:bg-term-surface bg-term-surface/50'"
                 @click="selectEye(e)"
               >
-                <span class="text-3xl text-term-bright mb-2">{{ e }}</span>
-                <span class="text-xs text-term-dim">{{ EYE_NAMES[e] }}</span>
+                <span class="text-3xl mb-2" :class="bEye === e ? 'text-legendary' : 'text-term-bright'">{{ e }}</span>
+                <span class="text-xs" :class="bEye === e ? 'text-legendary' : 'text-term-dim'">{{ EYE_NAMES[e] }}</span>
               </button>
             </div>
-            <div class="flex justify-end mt-6">
-              <button class="text-sm text-term-muted hover:text-prompt border border-term-border hover:border-prompt/40 rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="nextStep()">next →</button>
+            <div class="flex justify-between mt-6">
+              <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
+              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
@@ -497,62 +546,39 @@ const builderCommand = computed(() => {
                 v-for="h in HAT_LIST"
                 :key="h"
                 class="flex flex-col items-center border rounded-md py-5 px-3 cursor-pointer transition-colors"
-                :class="bHat === h ? 'border-prompt/50 bg-term-surface' : 'border-term-border hover:border-term-muted bg-term-surface/50'"
+                :class="bHat === h ? 'border-legendary/60 bg-legendary/10' : 'border-term-border hover:border-term-muted hover:bg-term-surface bg-term-surface/50'"
                 @click="selectHat(h)"
               >
-                <pre v-if="h !== 'none'" class="text-sm leading-tight text-term-bright mb-2 select-none">{{ hatLines[h] }}</pre>
-                <span v-else class="text-term-dim text-base mb-2">—</span>
-                <span class="text-xs text-term-dim">{{ h }}</span>
+                <pre v-if="h !== 'none'" class="text-sm leading-tight mb-2 select-none" :class="bHat === h ? 'text-legendary' : 'text-term-bright'">{{ hatLines[h] }}</pre>
+                <span v-else class="text-base mb-2" :class="bHat === h ? 'text-legendary' : 'text-term-dim'">—</span>
+                <span class="text-xs" :class="bHat === h ? 'text-legendary' : 'text-term-dim'">{{ h }}</span>
               </button>
             </div>
-            <div class="flex justify-end mt-6">
-              <button class="text-sm text-term-muted hover:text-prompt border border-term-border hover:border-prompt/40 rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="nextStep()">next →</button>
+            <div class="flex justify-between mt-6">
+              <button class="text-sm text-term-dim hover:text-term-bright border border-term-border hover:border-term-muted rounded-md px-5 py-2.5 cursor-pointer transition-colors" @click="prevStep()">← back</button>
+              <button class="text-sm border rounded-md px-5 py-2.5 transition-colors" :class="canNext ? 'text-term-muted hover:text-prompt border-term-border hover:border-prompt/40 cursor-pointer' : 'text-term-border border-term-border cursor-not-allowed'" :disabled="!canNext" @click="nextStep()">next →</button>
             </div>
           </div>
 
           <!-- Step 4: Result -->
           <div v-if="builderStep === 4">
-            <!-- Final preview -->
-            <div class="flex justify-center mb-6">
-              <div class="text-center">
-                <pre
-                  class="text-2xl leading-[1.3] select-none mb-3 inline-block"
-                  :class="rarityColor[bRarity]"
-                ><template v-for="(line, i) in builderSprite" :key="i">{{ line }}
-</template></pre>
-                <div>
-                  <span class="text-base" :class="rarityColor[bRarity]">
-                    {{ rarityStars[bRarity] }} {{ bRarity }} {{ bSpecies }}
-                  </span>
-                  <span v-if="bHat !== 'none'" class="text-term-dim text-sm ml-2">+{{ bHat }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Shiny toggle -->
-            <div class="flex justify-center mb-8">
-              <label
-                class="inline-flex items-center gap-3 cursor-pointer text-sm border rounded-md px-4 py-3 transition-colors"
-                :class="bShiny ? 'border-shiny/40 text-shiny bg-term-surface' : 'border-term-border text-term-dim bg-term-surface/50'"
+            <!-- Command + Copy -->
+            <div class="bg-term-surface border border-term-border rounded-md px-5 py-4 mb-4 flex items-center gap-3">
+              <pre class="text-sm text-term-text overflow-x-auto flex-1"><span class="text-prompt">$</span> {{ builderCommand }}</pre>
+              <button
+                class="shrink-0 bg-legendary text-[#0c0c0c] font-medium rounded-md px-4 py-2 text-sm cursor-pointer transition-colors hover:bg-legendary/80"
+                @click="copyBuilderCommand"
               >
-                <input v-model="bShiny" type="checkbox" class="accent-[#ffb86c] w-4 h-4" />
-                shiny
-              </label>
+                {{ builderCopied ? '✓ copied' : 'copy' }}
+              </button>
             </div>
 
-            <!-- Command -->
-            <div class="bg-term-surface border border-term-border rounded-md px-5 py-4">
-              <p class="text-term-dim text-sm mb-3">run this to find your companion:</p>
-              <div class="flex items-center gap-3">
-                <pre class="text-sm text-term-text flex-1 overflow-x-auto"><span class="text-prompt">$</span> {{ builderCommand }}</pre>
-                <button
-                  class="text-sm text-term-dim hover:text-term-muted transition-colors cursor-pointer shrink-0"
-                  @click="copyBuilderCommand"
-                >
-                  {{ builderCopied ? '✓ copied' : 'copy' }}
-                </button>
-              </div>
-            </div>
+            <p class="text-center text-term-dim text-xs">
+              run this inside of your terminal with claude installed
+            </p>
+            <p class="text-center text-term-dim text-xs mt-3">
+              don't forget to <a href="https://github.com/vibenalytics/ccbuddy" target="_blank" class="text-legendary hover:text-legendary/80 transition-colors">star our repo</a>
+            </p>
           </div>
         </div>
       </div>
